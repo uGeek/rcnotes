@@ -1,0 +1,1412 @@
+#!/bin/bash
+#  rcnotes.  Share tasks with multiple users using todo.txt
+#  Copyright (C) 2021 Angel. uGeek
+#  ugeekpodcast@gmail.com
+#
+#
+VERSION=v0.1.4
+#
+#
+
+
+
+VERSION=v0.1.4
+mkdir -p ~/.config/rcnotes ~/.config/rcnotes/mount
+if [ -f ~/.config/rcnotes/editor ];
+then
+    source ~/.config/rcnotes/editor
+else
+    echo -en "¿Que editor de texto quieres utilizar para configurar rcnotes?: " ; read -e edit
+    echo "EDITOR='$edit'" >  ~/.config/rcnotes/editor
+    source ~/.config/rcnotes/editor
+    exit
+    fi
+    if [ -f ~/.config/rcnotes/rcnotes.conf ];
+    then
+        echo ""
+	else
+	    echo -en "No has indicado ningún archivo de configuración o no existe. ¿Quieres crearlo?: " ; read -e RESPUESTA
+	    if [ "$RESPUESTA" = "SI" ] || [ "$RESPUESTA" = "S" ] || [ "$RESPUESTA" = "si" ] || [ "$RESPUESTA" = "s" ] || [ "$RESPUESTA" = "y" ] || [ "$RESPUESTA" = "yes" ]
+            then
+            $EDITOR ~/.config/rcnotes/rcnotes.conf
+            clear
+            fi
+    exit
+    fi
+if [ "$1" = "config" ]
+then
+    $EDITOR ~/.config/rcnotes/rcnotes.conf
+    $EDITOR ~/.config/rcnotes/tags
+    $EDITOR ~/.config/rcnotes/logs.conf
+    exit
+    fi
+source ~/.config/rcnotes/rcnotes.conf
+source ~/.config/rcnotes/logs.conf
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "h" ]
+then
+    echo "
+rcnotes $VERSION
+n    [palabra]                             Lanza última nota
+n m  [palabra] [palabra] [palabra]         Muestra notas filtradas por palabras
+Crear Notas
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+ n              n                   Crear una nota dentro de un subdirectorio a elegir
+ n              nn                  Crear una nota dentro de un subdirectorio a elegir con el editor de texto 2
+ n              nr                  Crear nueva nota en la raíz del directorio de notas
+Editar Notas
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+ n                 palabra          Abrir Nota con e editor (montada)
+ n            m    palabra          Listar todas las notas que contengan la palabra en el nombre de archivo y seleccionar para abrir 
+ n            del                   Borrar nota en remoto
+ n            move                  Mover nota a otro directorio
+ n            mv                    Renombrar nota
+Listar Notas
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+ n                            Listar últimas 40 notas
+ n           o                Listar notas en orgmode
+ n           t                Listar notas en txt
+ n           ld               Listar notas dentro de un directorio. Ejem: n ld nombre_directorio palabra_filtrar
+                                                        n ld notas/linux  jellyfin
+ n           ldl              Listar últimas 40 notas de un directorio
+ n           last             Notas de los últimos 8 dias
+ n           lst              Listar notas de Hoy para editar
+ n           lsy              Listar notas de Ayer para editar
+ n           lsw              Listar notas última semana para editar
+Añadir a Notas
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n            add  palabra         Añadir linea a linea contenido a la nota filtrada:
+                                           - Para salir del comando:                 Ctrl+c
+                                           - Para ver la nota sin salir del comando: cat nota
+                                       Si quieres ver
+  n            addl                 Añadir línea a línea en la ultima en la ultima nota editada.    Para salir del comando Ctrl+c
+                                           - Para salir del comando:                 Ctrl+c
+                                           - Para ver la nota sin salir del comando: cat nota
+  n            addyt                Añadir url de youtube a la nota que desees
+Añadir a Nota QuickNote
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n             a                   Añadir una nota rápida a la nota QuickNote. Añade \n en la misma línea, para un salto de línea
+  n            aline                Enviar a la nota QuickNote el contenido que hay en la linea
+  n            ytq                  Añadir url de youtube a nota QuickNote                      
+  n            ihtmlq               Insertar código embebido html en nota QuickNote
+Listar editar Notas sin menú
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n             ls                  Listar Notas
+  n             lu                  Listar últimas 40 Notas creadas o editadas. Fin comando
+  n             lcat                Visualizar nota con cat
+  n             lnl                 Editar nota (en host) número... Ejemplo: n lnl 20  (Editar nota 20). Sin menú
+  n             lsc                 Listar todas las Notas
+  n             ln                  Editar nota número... Ejemplo: n ln 20  (Editar nota 20). Sin menú EDITORMD2 en el archivo config
+Visualización
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n              cat              Mostrar nota en bruto
+  n              catl             Mostrar última nota editada en bruto
+  n              catc             Mostrar nota limpia (clean). Es necesario instalar: pip3 install mdo
+  n              catw             Mostrar nota en el navegador web. requiere instalar sudo apt install lynx
+LOCAL
+------
+Notas listadas,editadas,... en local
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n              l                Abrir Nota descargando local. Seguido palabra, filtra entre notas.
+  n              ll               Listar últimas 45 notas o notas editadas (montado nota local)
+  n              pin              Listar Notas pineadas. Escribe en la nota:         #pin
+  n              tag              Listar Notas con la etiqueta. Ejemplo:      n tag etiqueta
+  n              tags             Mostrar todas las notas con las etiquetas en el archivo tags (edita lista con comando e)
+  n              orgtag / tagorg  Listar etiquetas de archivos orgmode :pìn:
+Búsqueda 
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n              buscar           Buscar palabras. Por contenido. Con solo tener un resultado
+  n              buscarf          Buscar por palabras a fondo. Filtro de 2 palabras. Accede directamente a la línea
+                                      Ejemplo: n buscarf syncthing docker
+  n              buscarfd         Buscar a fondo en un directorio de tu máquina local
+                                      Ejemplo: n buscarfd "freshrss"  ~/mount/Notas
+Sincronización y montaje del directorio de Notas 
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n             u / up           Subir notas editadas en local al servidor
+  n             d / down         Descargar notas del servidor a local
+  n             mount            Montar directorio en directorio de configuracion y abrir editor
+  n             um / umount      Desmontar la unidad memoria
+Mantenimiento 
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n           clean                 Eliminar archivos temporales
+  n           config                Editar archivo de configuración          
+  n           log / logs            Mostrar logs
+Control de versiones
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n           cv                    Control de versiones. Es necesario tener 2 nubes. Añadir los directorios a sincronizar en el archivo cv.conf
+  n           catcv / cvcat         Hacer un cat de una de las notas con control de versiones
+  n           ecv                   Editar una nota del control de versiones
+  n           cpcv                  Restaurar el archivo del control de versiones en la ruta deseada 
+                                             Ejemplo: n cpcv trabajo
+                                                      Introduce en que directorio de tu nube quieres guardar el archivo. Ejem: Notas/trabajo/
+                                                      El archivo tendrá el nombre con la fecha del control de versiones. 
+                                                      Es posible renombrarlo con: n mv
+  n           bd   NUM_DIAS         Backup-days. Listar archivos de + de NUM_DIAS
+  n           cbd  NUM_DIAS         Eliminar archivos con + de NUM_DIAS
+Ordenar y convertir Notas
+---------------------------------------------------------------------------------
+rcnotes      [opción]               Descripción
+---------------------------------------------------------------------------------
+  n          sort-md               Enviar por etiqueta notas md a un subdirectorio. 
+                                      Ejemplo: n sort-md android Zettel (Notas android al subdirectorio Zettel)
+                                      si no especifica subdirectorio, lo hará en la raíz principal.
+                                      rcnotes necesita descargar notas a local para hacer la búsqueda recursiva más rápida
+  n          convert-org           Convierte todas las notas markdown con una etiqueta, en un archivo orgmode. Ejemplo:   n convert-org '#linux'
+                                   Configurar en el archivo de configuración la ruta donde irán los archivos orgmode convertidos CLOUDCONVERTORG
+  n          convert-dir-org       Convierte el directorio de notas a orgmode. Ejemplo: n convert-dir-org Zettel
+ 		  	       		     	     	      	       n convert-dir-org "Zettel/android"
+
+Paquetes necesarios
+-------------------
+ sudo pip3 install mdo
+
+Plugins
+-----------------------------------------------------------------
+"
+source ~/.config/rcnotes/rcnotes.pg
+	exit
+	fi
+source ~/.config/rcnotes/rcnotes.pg
+if [ "$1" = "lsc" ]
+then
+rclone lsl  $CLOUDDIRNOTAS  |  awk '{print $2,$3,$4}'  | sort -k1 -r | awk '{print $3}'  | egrep ".txt|.org|.md" | grep -v "~" | sed s'| |%20|g' | grep "$2" | grep "$3"
+exit
+fi
+if [ "$1" = "catw" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS  |  awk '{print $2,$3,$4}'  | sort -k1 -r | awk '{print $3}'  | egrep ".md|.org|.txt" | grep -v "~" | sed s'| |%20|g' )  #
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+clear
+echo "$(rclone cat $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)")" | pandoc -t html | lynx -stdin
+exit
+fi
+if [ "$1" = "o" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTASORG  |  awk '{print $2,$3,$4}'  | sort -k1 -r | awk '{print $3}'  | grep ".org" | grep -v "~" | sed s'| |%20|g' )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+rclone mount $CLOUDDIRNOTASORG ~/.config/rcnotes/mount --include="$(echo "$ALLNOTAS" | sed -n "$NUM"p)" --vfs-cache-mode full --allow-other > /dev/null 2>&1 &
+sleep 5s
+$EDITORORG ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+fusermount -uz ~/.config/rcnotes/mount/
+exit
+fi
+if [ "$1" = "r" ]
+then
+ mkdir -p ~/.config/rcnotes/memory
+ rclone mount :memory:  ~/.config/rcnotes/memory --vfs-cache-mode full --allow-other &
+ rclone sync $CLOUDDIRNOTAS ~/.config/rcnotes/memory -P
+ find ~/.config/rcnotes/memory -depth -name "* *" -execdir rename 's/ /-/g' "{}" \;
+ rclone sync ~/.config/rcnotes/memory $CLOUDDIRNOTAS -P
+ fusermount -uz ~/.config/rcnotes/memory
+  exit
+fi
+if [ "$1" = "clean" ]
+then
+rclone delete  $CLOUDDIRNOTAS  --include '*~' --include '*#'
+exit
+fi
+if [ "$1" = "mount" ]
+then
+rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+sleep 5s
+$EDITORMD -nw ~/.config/rcnotes/mount/
+fusermount -uz ~/.config/rcnotes/mount/
+exit
+fi
+if [ "$1" = "nr" ]      # Crear una nueva nota seleccionando en que direcotiro
+then
+    echo "Introduce el nombre de la Nota."
+    echo "Ejem: Si esta en el subdirectorio Notas, seria: /Notas/nombre de la nota"
+    echo -en "Nota: " ; read -e NUM
+    rclone touch $CLOUDDIRNOTAS/"$(echo $NUM | tr ' ' '-' )".md
+rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+sleep 5s
+$EDITORMD -nw ~/.config/rcnotes/mount/"$(echo $NUM | tr ' ' '-' )".md
+fusermount -uz ~/.config/rcnotes/mount/
+exit
+fi
+if [ "$1" = "n" ]
+then
+    echo ""
+    echo "Selecciona un directorio"
+    ALLDIRECTORIO=$(rclone lsd $CLOUDDIRNOTAS |   awk '{print $5}')
+    echo "Introduce el nombre de la Nota."
+    echo "$ALLDIRECTORIO" |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+    echo ""
+    echo -en "Selecciona el nº del directorio: " ; read -e NUM
+    echo     "    Directorio "$(echo "$ALLDIRECTORIO" | sed -n "$NUM"p)""
+    DIRECTORIO="$(echo "$ALLDIRECTORIO" | sed -n "$NUM"p)"
+    echo ""
+    echo ""
+    echo -en "Introduce en nombre de la Nota: " ; read -e NOMBRE
+    echo ""
+    echo     "     Creando la nota $(echo $NOMBRE ).md"
+    echo "# $NOMBRE" | rclone rcat $CLOUDDIRNOTAS/"$DIRECTORIO"/"$(echo $NOMBRE)".md
+    #rclone touch $CLOUDDIRNOTAS/"$DIRECTORIO"/"$(echo $NOMBRE | tr ' ' '-' )".md
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    sleep 5s
+    $EDITORMD -nw ~/.config/rcnotes/mount/$DIRECTORIO/"$(echo $NOMBRE)".md
+    fusermount -uz ~/.config/rcnotes/mount/
+exit
+fi
+if [ "$1" = "nn" ]
+then
+    echo ""
+    echo "Selecciona un directorio"
+    ALLDIRECTORIO=$(rclone lsd $CLOUDDIRNOTAS |   awk '{print $5}')
+    echo "Introduce el nombre de la Nota."
+    echo "$ALLDIRECTORIO" |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+    echo ""
+    echo -en "Selecciona el nº del directorio: " ; read -e NUM
+    echo     "    Directorio "$(echo "$ALLDIRECTORIO" | sed -n "$NUM"p)""
+    DIRECTORIO="$(echo "$ALLDIRECTORIO" | sed -n "$NUM"p)"
+    echo ""
+    echo ""
+    echo -en "Introduce en nombre de la Nota: " ; read -e NOMBRE
+    echo ""
+    echo     "     Creando la nota $(echo $NOMBRE ).md"
+    echo "# $NOMBRE" | rclone rcat $CLOUDDIRNOTAS/"$DIRECTORIO"/"$(echo $NOMBRE)".md
+    #rclone touch $CLOUDDIRNOTAS/"$DIRECTORIO"/"$(echo $NOMBRE | tr ' ' '-' )".md
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    sleep 5s
+    $EDITORMD2 ~/.config/rcnotes/mount/$DIRECTORIO/"$(echo $NOMBRE)".md
+    fusermount -uz ~/.config/rcnotes/mount/
+exit
+fi
+if [ "$1" = "del" ]
+then
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "¿Estas seguro que quieres eliminar la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)"?" ; read -e RESPUESTA
+if [ "$RESPUESTA" = "SI" ] || [ "$RESPUESTA" = "S" ] || [ "$RESPUESTA" = "si" ] || [ "$RESPUESTA" = "s" ] || [ "$RESPUESTA" = "y" ] || [ "$RESPUESTA" = "yes" ]
+then
+rclone delete $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+fi
+exit
+fi
+if [ "$1" = "mv-tags" ]
+then
+mkdir -p $CLOUDDIRNOTASLOCAL
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+while read LINEA; do
+    echo "Etiqueta #"$LINEA""
+    echo "--------------------------"
+ALLNOTAS=$(grep -r ""\#$LINEA"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+while read LINE; do
+mkdir -p "$MVTAG/$LINEA/"
+mv -n  "$LINE" "${MVTAG}/$LINEA/"
+done <<< "$(echo "$ALLNOTAS")"
+echo ""
+done <<< "$(cat ~/.config/rcnotes/mv-tags)"
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS  > /dev/null 2>&1 &
+exit
+fi
+if [ "$1" = "mv-tags" ]
+then
+mkdir -p $CLOUDDIRNOTASLOCAL
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+while read LINEA; do
+    echo "Etiqueta #"$LINEA""
+    echo "--------------------------"
+ALLNOTAS=$(grep -r ""\#$LINEA"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+while read LINE; do
+mkdir -p "$MVTAG/$LINEA/"
+echo "mv -b "$LINE" "$MVTAG/$LINEA/""
+done <<< "$(echo "$ALLNOTAS")"
+echo ""
+done <<< "$(cat ~/.config/rcnotes/mv-tags)"
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS  > /dev/null 2>&1 &
+exit
+fi
+if [ "$1" = "mv-tags2" ]
+then
+mkdir -p $CLOUDDIRNOTASLOCAL
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+while read LINEA; do
+    echo "Etiqueta #"$LINEA""
+    echo "--------------------------"
+ALLNOTAS=$(grep -r ""\#$LINEA"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+while read LINE; do
+mkdir -p "$MVTAG2/$LINEA/"
+mv "$LINE" "$MVTAG2/$LINEA/"
+done <<< "$(echo "$ALLNOTAS")"
+done <<< "$(cat ~/.config/rcnotes/mv-tags2)"
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS  > /dev/null 2>&1 &
+exit
+fi
+if [ "$1" = "mv-tags3" ]
+then
+mkdir -p $CLOUDDIRNOTASLOCAL
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+while read LINEA; do
+    echo "Etiqueta #"$LINEA""
+    echo "--------------------------"
+ALLNOTAS=$(grep -r ""\#$LINEA"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+while read LINE; do
+mkdir -p "$MVTAG3/$LINEA/"
+mv "$LINE" "$MVTAG3/$LINEA/"
+done <<< "$(echo "$ALLNOTAS")"
+done <<< "$(cat ~/.config/rcnotes/mv-tags3)"
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS  > /dev/null 2>&1 &
+exit
+fi
+if [ "$1" = "mv" ]
+then
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo ""
+echo "Cambia el nombre de la nota:"
+echo "                             $(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+echo ""
+echo -en "Introduce el nuevo nombre de nota (Recuerda añadir la extensión de la nota .md, .org): " ; read -e NOM
+rclone moveto $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)" $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p |sed 's!\(.*\)/.*!\1!')"/"$NOM"
+exit
+fi
+if [ "$1" = "move" ]
+then
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo ""
+echo "Mueve nota:  $(echo "$ALLNOTAS" | sed -n "$NUM"p |  sed 's/.*\///')"
+echo ""
+NAMENOTE=$(echo "$ALLNOTAS" | sed -n "$NUM"p |  sed 's/.*\///')
+PATHNAMENOTE=$(echo "$ALLNOTAS" | sed -n "$NUM"p )
+echo ""
+echo "Selecciona un directorio"
+ALLDIRECTORIO=$(rclone lsd $CLOUDDIRNOTAS |   awk '{print $5}')
+echo "Introduce el nombre de la Nota."
+echo "$ALLDIRECTORIO" |  nl -s '. '
+echo ""
+echo -en "Selecciona el nº del directorio: " ; read -e NUM
+echo     "    Directorio "$(echo "$ALLDIRECTORIO" | sed -n "$NUM"p)""
+DIRECTORIO="$(echo "$ALLDIRECTORIO" | sed -n "$NUM"p)"
+echo ""
+echo ""
+rclone moveto $CLOUDDIRNOTAS/$PATHNAMENOTE $CLOUDDIRNOTAS/$DIRECTORIO/$NAMENOTE
+exit
+fi
+if [ "$1" = "nm" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4}'  | sort -k1 -r | awk '{print $3}'  | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" | sed s'| |%20|g' )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g  |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount --include="$(echo "$ALLNOTAS" | sed -n "$NUM"p)" --vfs-cache-mode full --allow-other > /dev/null 2>&1 &
+sleep 5s
+$EDITORMD -nw ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+fusermount -uz ~/.config/rcnotes/mount/
+exit
+fi
+if [ "$1" = "u" ] || [ "$1" = "up" ]
+then
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS    -P
+exit
+fi
+if [ "$1" = "down" ] || [ "$1" = "d" ]
+then
+rclone sync  $CLOUDDIRNOTAS $CLOUDDIRNOTASLOCAL   -P
+exit
+fi
+if [ "$1" = "umount" ] || [ "$1" = "um" ]
+then
+fusermount -uz $CLOUDDIRNOTASLOCAL/
+exit
+fi
+if [ "$1" = "catc" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g  | nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+mdo -w 80  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+exit
+fi
+if [ "$1" = "cat" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+clear
+echo ""
+echo "#  $(echo "$ALLNOTAS" | sed -n "$NUM"p |  sed 's/.*\///')"
+rclone cat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+echo ""
+exit
+fi
+if [ "$1" = "ls-" ]
+then
+if [ "$(cat $CLOUDDIRNOTASLOCAL/rcnotes.txt )" != "on" ]
+then
+echo "Montando el directorio $CLOUDDIRNOTASLOCAL"
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+fi
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL  -P
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4}'  | sort -k1 -r | awk '{print $3}'  | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" | sed s'| |%20|g' )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  nl -s '. ' | grep -i "$1" | grep -i "$2"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+    echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS    -P
+exit
+fi
+if [ "$1" = "lst" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo "Notas del $(date -d "$(date +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  grep "$(date +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g  |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "lsy" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo "Notas del $(date -d "$(date --date='-1 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-1 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "lsw" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo "Notas desde el $(date -d "$(date --date='-7 day' +"%Y-%m-%d")" +'%A %d de %B del %Y') al $(date  +'%A %d de %B del %Y')"
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-1 w' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "yt" ]
+then
+COPY=$(xclip -o)
+clear
+$2=COPY
+IMAGE=$(echo $2 | cut -d "=" -f2 | cut -d "&" -f1)
+echo '[![](http://img.youtube.com/vi/'$IMAGE'/0.jpg)]('$2' "")'
+echo '[![](http://img.youtube.com/vi/'$IMAGE'/0.jpg)]('$2' "")' | xclip -sel clip
+exit
+fi
+if [ "$1" = "yto" ]
+then
+echo -ne "Introduce la url: " ; read -e URL
+IMAGE=$(echo $URL | cut -d "=" -f2 | cut -d "&" -f1)
+echo '[['$1'][http://img.youtube.com/vi/'$IMAGE'/0.jpg]]'
+echo '[['$1'][http://img.youtube.com/vi/'$IMAGE'/0.jpg]]'  | xclip -sel clip
+exit
+fi
+if [ "$1" = "ytq" ]
+then
+echo -ne "Introduce la url: " ; read -e URL
+IMAGE=$(echo $URL | cut -d "=" -f2 | cut -d "&" -f1)
+echo "Video $(wget --quiet -O - $URL   | sed -n -e 's!.*<title>\(.*\)</title>.*!\1!p') agregado a QuickNote"
+echo -e "$(rclone cat $QUICKNOTE)\n## $(wget --quiet -O - $URL   | sed -n -e 's!.*<title>\(.*\)</title>.*!\1!p')\n$(echo echo '[![](http://img.youtube.com/vi/'$IMAGE'/0.jpg)]('$URL' "")')\n----\n" | sed s/'\w*^*'// | awk '{$1=$1};1' | rclone rcat $QUICKNOTE
+exit
+fi
+if [ "$1" = "ihtmlq" ]
+then
+echo -en "Copia el código html: " ; read -e CODE
+echo -e "$(rclone cat $QUICKNOTE)\n\n"$CODE"\n----\n" | sed s/'\w*^*'// | awk '{$1=$1};1' | rclone rcat $QUICKNOTE
+    exit
+fi
+if [ "$1" = "ll" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" | head -45)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g  |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+    exit
+fi
+if [ "$1" = "ls" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "$ALLNOTAS" | sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g  |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+    exit
+fi
+if [ "$1" = "lu" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" | head -40)
+echo "$ALLNOTAS" | sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g  |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+    exit
+fi
+if [ "$1" = "lcat" ]
+then
+NUM=$2
+    ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#")
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$1" | grep -i "$2" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    sleep $TIME
+    #                                      $DIRECTORIO/
+clear
+    cat  ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+    fusermount -uz ~/.config/rcnotes/mount/
+    exit
+fi
+if [ "$1" = "ln" ]
+then
+NUM=$2
+    ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#")
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$1" | grep -i "$2" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    sleep $TIME
+    #                                      $DIRECTORIO/
+    $EDITORMD2  ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+    fusermount -uz ~/.config/rcnotes/mount/
+    exit
+fi
+if [ "$1" = "lnl" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" | head -40)
+NUM=$2
+$EDITORMD  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+    exit
+fi
+if [ "$1" = "buscar" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(grep -r ""$2"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///'|  sed s'|.md||'g | sed s'|.org||'g | nl -s '. '
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD "$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "tag" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(grep -r ""\#$2"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///'|  grep -v '~' | sed s'|.md||'g | sed s'|.org||'g | nl -s '. '
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD "$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "tags" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+while read LINEA; do
+    echo "Etiqueta #"$LINEA""
+    echo "--------------------------"
+ALLNOTAS=$(grep -r ""\#$LINEA"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///'|  sed s'|.md||'g | sed s'|.org||'g | nl -s '. '
+echo ""
+done <<< "$(cat ~/.config/rcnotes/tags)"
+    exit
+fi
+if [ "$1" = "last" ]
+then
+echo ""
+echo "Notas del $(date -d "$(date --date='-0 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-0 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-1 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-1 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-2 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-2 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-3 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-3 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-4 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-4 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-5 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-5 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-6 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-6 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-7 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-7 day' +"%Y-%m-%d")" | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+echo ""
+echo "Notas del $(date -d "$(date --date='-8 day' +"%Y-%m-%d")" +'%A %d de %B del %Y')"
+echo "-----------------------------------------------------------------------"
+ALLNOTAS=$( rclone lsl  $CLOUDDIRNOTAS --exclude "*~" | grep "$(date --date='-8 day' +"%Y-%m-%d")" | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS"|  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. '
+echo ""
+exit
+fi
+if [ "$1" = "convert-org" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(grep -r ""$2"" $CLOUDDIRNOTASLOCAL -m 1 | cut -d":" -f1)
+if [ "$(rclone cat $CLOUDCONVERTORG/.$(echo $2 | sed 's|\#||g').list)" != "$ALLNOTAS" ]
+then
+    echo "Han habido cambios en el archivo. Creando backup"
+    rclone moveto $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org  $CLOUDCONVERTORG/backup/$(echo $2 | sed 's|\#||g')_$(date "+_%Y-%m-%d_%H:%M").org
+    rclone moveto $CLOUDCONVERTORG/.$(echo $2 | sed 's|\#||g').list  $CLOUDCONVERTORG/backup/.$(echo $2 | sed 's|\#||g')_$(date "+_%Y-%m-%d_%H:%M").list
+    fi
+echo  "#+TITLE: $(echo $2 |  sed 's|\#||g')" | rclone rcat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org
+echo -e "$(rclone cat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org)\n$(echo -e "* Index\n\n** "$(echo "$ALLNOTAS" | wc -l)"Notas\n\n$ALLNOTAS\n\n")\n\n" | rclone rcat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org -v
+    while read LINEA; do
+    echo "              Convirtiendo: $LINEA"
+    echo -e "$(rclone cat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org)\n$(pandoc -t org "$LINEA" --columns 10000 | sed -E "/^[[:space:]]+:/ d" )" | rclone rcat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org -v
+    done <<< "$ALLNOTAS"
+echo "$ALLNOTAS" | rclone rcat $CLOUDCONVERTORG/.$(echo $2 | sed 's|\#||g').list -v
+exit
+fi
+if [ "$1" = "convert-dir-org" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(find $CLOUDDIRNOTASLOCAL/""$2"" | grep  "md$")
+if [ "$(rclone cat $CLOUDCONVERTORG/.$(echo $2 | sed 's|\#||g').list)" != "$ALLNOTAS" ]
+then
+    echo "Han habido cambios en el archivo. Creando backup"
+    rclone moveto $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org  $CLOUDCONVERTORG/backup/$(echo $2 | sed 's|\#||g')_$(date "+_%Y-%m-%d_%H:%M").org
+    rclone moveto $CLOUDCONVERTORG/.$(echo $2 | sed 's|\#||g').list  $CLOUDCONVERTORG/backup/.$(echo $2 | sed 's|\#||g')_$(date "+_%Y-%m-%d_%H:%M").list
+    fi
+echo "Creando archivo orgmode con $(echo "$ALLNOTAS" | wc -l) Notas"
+echo ""
+echo ""
+echo ""
+echo  "#+TITLE: $(echo $2 |  sed 's|\#||g')" | rclone rcat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g'  | sed 's|\/|-|g').org
+echo -e "$(rclone cat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g').org)\n$(echo -e "* Index\n\n** "$(echo "$ALLNOTAS" | wc -l)"Notas\n\n$ALLNOTAS\n\n")\n\n" | rclone rcat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g'  | sed 's|\/|-|g').org -v
+    while read LINEA; do
+    echo "              Convirtiendo: $LINEA"
+    echo -e "$(rclone cat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g' | sed 's|\/|-|g').org)\n$(pandoc -s -t org "$LINEA" | sed -E "/^[[:space:]]+:/ d" )" | rclone rcat $CLOUDCONVERTORG/$(echo $2 | sed 's|\#||g' | sed 's|\/|-|g').org -v
+    done <<< "$ALLNOTAS"
+echo "$ALLNOTAS" | rclone rcat $CLOUDCONVERTORG/.$(echo $2 | sed 's|\#||g').list -v
+exit
+fi
+if [ "$1" = "send-sort-md" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(grep -r ""#$2"" $CLOUDDIRNOTASLOCAL/"$3" -m 1 | cut -d":" -f1)
+while read LINEA; do
+echo "Moviendo: $(echo $LINEA | sed 's/.*\///')"
+echo "$(cat "$LINEA")" | rclone rcat $CLOUDCONVERTMD/"$2"/"$(echo $LINEA | sed 's/.*\///')"
+done <<< "$(echo "$ALLNOTAS" | grep "md")"
+echo "---"
+exit
+fi
+if [ "$1" = "sort-md" ]
+then
+ROOTFOLDER="/home/marc/Notas/"    
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(grep -r ""#$2"" $CLOUDDIRNOTASLOCAL/"$3" -m 1 | cut -d":" -f1)
+echo "Ordenando $(echo "$ALLNOTAS" | wc -l) Notas"
+echo "---------------------------"
+echo ""
+while read LINEA; do
+echo "Moviendo: $(echo $LINEA | sed 's/.*\///')"
+rclone moveto "$CLOUDDIRNOTAS/$LINEA" "$CLOUDDIRNOTAS/$3/$2/$(echo $LINEA | sed 's/.*\///')"
+LOGSDIFF=$(echo "$(date +'%Y/%m/%d %T')  :  SORT NOTE \t $LINEA")
+echo -ne "$(rclone cat $LOGS/rcnotes.log)\n$(echo "$LOGSDIFF")" | rclone rcat $LOGS/rcnotes.log
+done <<< "$(echo "$ALLNOTAS"  | sed "s|$CLOUDDIRNOTASLOCAL||g" | grep "md")"
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+exit
+fi
+if [ "$1" = "buscarf" ]
+then
+echo ""
+echo "Poner palabras entre comillas"
+echo ""
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(grep -inr ""$2"" $CLOUDDIRNOTASLOCAL | grep "$3" | cut -d":" -f1)
+NUMT=$(grep -inr ""$2"" $CLOUDDIRNOTASLOCAL | grep "$3" | cut -d":" -f2)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "    Para expandir un archivo OrgMode, pulsa C-i"
+echo ""
+echo   "$(grep -ir ""$2"" $CLOUDDIRNOTASLOCAL  | grep "$3" | sed s'|:|\t>>>  |'g | cut -c 1-120 |  nl -s '. ')"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD +"$(echo "$NUMT" | sed -n "$NUM"p)" "$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "orgtag" ] || [ "$1" = "tagorg" ]
+then
+echo ""
+echo "Poner palabras entre comillas"
+echo ""
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+sleep 3
+ALLNOTAS=$(grep -inr "":$2:"" $CLOUDDIRNOTASLOCAL | grep "$3" | cut -d":" -f1)
+NUMT=$(grep -inr "":$2:"" $CLOUDDIRNOTASLOCAL | grep "$3" | cut -d":" -f2)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "    Para expandir un archivo OrgMode, pulsa C-i"
+echo ""
+echo   "$(grep -ir "":$2:"" $CLOUDDIRNOTASLOCAL  | grep "$3" | sed s'|:|\t> |'g | cut -d">" -f2- | cut -d">" -f1 | nl -s '. ')"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD +"$(echo "$NUMT" | sed -n "$NUM"p)" "$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "buscarfd" ]
+then
+echo "    Buscando...  Espere"
+CLOUDDIRNOTASLOCAL=$3
+ALLNOTAS=$(grep -inr ""$2"" $CLOUDDIRNOTASLOCAL | grep "$4" | cut -d":" -f1)
+NUMT=$(grep -inr ""$2"" $CLOUDDIRNOTASLOCAL | grep "$4" | cut -d":" -f2)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "    Para expandir un archivo OrgMode, pulsa C-i"
+echo ""
+echo   "$(grep -ir ""$2"" $CLOUDDIRNOTASLOCAL  | grep "$4" | sed s'|:|\t>>>  |'g | cut -c 1-120 |  nl -s '. ')"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD +"$(echo "$NUMT" | sed -n "$NUM"p)" "$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+exit
+fi
+if [ "$1" = "pin" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(grep -r "#pin" "$CLOUDDIRNOTASLOCAL" | grep "$3" | cut -d":" -f1 | grep -v "~" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo ""
+echo   "$(echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. '  | sed s'|.md||'g )"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD "$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "a" ]
+then
+read -e -r TEXT
+echo -e "$(rclone cat $QUICKNOTE)\n\n"$TEXT"\n----\n" | sed s/'\w*^*'// | awk '{$1=$1};1' | rclone rcat $QUICKNOTE
+echo "###################################################################"
+rclone cat $QUICKNOTE
+echo "###################################################################"
+exit
+fi
+if [ "$1" = "aline" ]
+then
+echo -e "$(rclone cat $QUICKNOTE)\n\n""$(echo $* | cut -d" " -f2-)" | sed '/^ *$/d' | rclone rcat $QUICKNOTE
+rclone cat $QUICKNOTE
+exit
+fi
+if [ "$1" = "ld" ]
+then
+echo ""
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS/$2 --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#")
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$3" | grep -i "$4" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+    rclone mount $CLOUDDIRNOTAS/$2 ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    $EDITORMD -nw ~/.config/rcnotes/mount/$DIRECTORIO/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )" #  "$(echo $NOMBRE)".md
+    fusermount -uz ~/.config/rcnotes/mount/
+    exit
+fi
+if [ "$1" = "ldl" ]
+then
+echo ""
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS/$2 --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#"  | head -40)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$3" | grep -i "$4" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+    rclone mount $CLOUDDIRNOTAS/$2 ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    $EDITORMD -nw ~/.config/rcnotes/mount/$DIRECTORIO/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )" #  "$(echo $NOMBRE)".md
+    fusermount -uz ~/.config/rcnotes/mount/
+    exit
+fi
+if [ "$1" = "" ]
+then
+echo ""
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#"  | head -40)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    $EDITORMD -nw ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )" #  "$(echo $NOMBRE)".md
+    fusermount -uz ~/.config/rcnotes/mount/
+    exit
+fi
+if [ "$1" = "all" ]
+then
+echo ""
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#"  | head -40)
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    $EDITORMD -nw ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )" #  "$(echo $NOMBRE)".md
+    fusermount -uz ~/.config/rcnotes/mount/
+    exit
+fi
+if [ "$1" = "l" ]
+then
+echo ""
+mkdir -p $CLOUDDIRNOTASLOCAL
+echo "Descargando/Actualizando Notas..."
+echo "---------------------------------"
+echo ""
+echo ""
+rclone sync $CLOUDDIRNOTAS  $CLOUDDIRNOTASLOCAL   > /dev/null 2>&1 &
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+$EDITORMD  $CLOUDDIRNOTASLOCAL/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+clear
+echo ""
+    echo "Subiendo/Actualizando Notas ..."
+    echo "-------------------------------"
+    echo ""
+rclone sync $CLOUDDIRNOTASLOCAL $CLOUDDIRNOTAS   # -P
+exit
+fi
+if [ "$1" = "mv-dir" ]
+then
+    echo ""
+ALLNOTAS=$(rclone lsl  $CLOUDDIR --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo ""
+echo ""
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+echo "---------------------------------------------------------------------------"
+echo ""
+echo "Introduce el directorio donde se va copiar el archivo"
+echo "        Ejemplo: Notas/trabajo/"
+echo ""
+echo "---------------------------------------------------------------------------"
+echo "El archivo tendrá la hora del control de versiones, es necesario renombrarlo" 
+echo "---------------------------------------------------------------------------"
+echo ""
+echo "En que directorios quieres copiar el archivo?" ; read -e DIR
+echo ""
+rclone copy $CLOUDDIR"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' | cut -d " " -f2 )" $CLOUD"$DIR" -P
+echo ""
+    exit
+    fi
+if  [ "$1" = "bd" ]
+then
+    rclone delete $CLOUD/backup/ --min-age "$2"d  --dry-run
+exit
+fi
+if  [ "$1" = "cbd" ]
+then
+    rclone delete $CLOUD/backup/ --min-age "$2"d
+exit
+fi
+if [ "$1" = "cv" ]
+then
+    while read LINEA; do
+    echo "Comprobando cambios en el directorio $LINEA"
+    echo "-------------------------------------------"
+    rclone sync $CLOUD/$LINEA $CLOUD2/$LINEA --backup-dir $CLOUD2/backup/$LINEA --suffix=$(date "+_%Y-%m-%d_%H:%M") --suffix-keep-extension -P
+    echo "-------------------------------------------"
+    done <<< "$(cat $CONFIG)"
+    echo "Sincronizando directorio backup a la nube principal"
+    echo "---------------------------------------------------"
+    rclone sync $CLOUD2/backup/ $CLOUD/backup/ -P
+    exit
+    fi
+if [ "$1" = "catcv" ] || [ "$1" = "cvcat" ] 
+then
+    echo ""
+ALLNOTAS=$(rclone lsl  $CLOUD/backup/ --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "################################################################"
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+echo "################################################################"
+echo ""
+    rclone cat $CLOUD/backup/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )" #  "$(echo $NOMBRE)".md
+echo ""
+    exit
+    fi
+if [ "$1" = "cpcv" ]
+then
+    echo ""
+ALLNOTAS=$(rclone lsl  $CLOUD/backup/ --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo ""
+echo ""
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+echo "---------------------------------------------------------------------------"
+echo ""
+echo "Introduce el directorio donde se va copiar el archivo"
+echo "        Ejemplo: Notas/trabajo/"
+echo ""
+echo "---------------------------------------------------------------------------"
+echo "El archivo tendrá la hora del control de versiones, es necesario renombrarlo" 
+echo "---------------------------------------------------------------------------"
+echo ""
+echo "En que directorios quieres copiar el archivo?" ; read -e DIR
+echo ""
+rclone copy $CLOUD/backup/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' | cut -d " " -f2 )" $CLOUD"$DIR" -P
+echo ""
+    exit
+    fi
+if [ "$1" = "ecv" ]
+then
+    echo ""
+ALLNOTAS=$(rclone lsl  $CLOUD/backup/ --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+    rclone mount $CLOUD/backup/ ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    $EDITORMD -nw ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )" #  "$(echo $NOMBRE)".md
+    fusermount -uz ~/.config/rcnotes/mount/
+    exit
+    fi
+if [ "$1" = "logs" ] || [ "$1" = "log" ]
+then
+    echo "rcnotes. logs"
+    echo "-------------"
+rclone cat $LOGS/rcnotes.log
+echo ""
+exit
+fi
+if [ "$1" = "add" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+echo ""
+clear
+echo "#  $(echo "$ALLNOTAS" | sed -n "$NUM"p |  sed 's/.*\///')"
+rclone cat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+echo ""
+echo "--------------------------------------"
+echo "Introduce el texto que quieres agregar"
+echo "--------------------------------------"
+echo ""
+echo "  Opciones:"
+echo "    - Ctrl + c = Salir"
+echo "    - cat nota = Ver nota actual y seguir agregando lineas "
+echo ""
+echo "         Cada vez que introduces una línea, al pulsar Enter, será agregada a la nota"
+echo ""
+echo "--------------------------------------"
+echo ""
+echo ""
+while :
+do
+read -e -r TEXT
+if [ "$TEXT" = "cat nota" ]
+   then
+clear
+echo "Nombre de Nota: $(echo "$ALLNOTAS" | sed -n "$NUM"p |  sed 's/.*\///')"
+echo "-----------------------------------------------"
+rclone cat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+echo ""
+echo ""
+echo "--------------------------------------"
+echo "    Continua agregando más texto "
+echo "--------------------------------------"
+echo ""
+echo "  Opciones:"
+echo "    - Ctrl + c = Salir"
+echo "    - cat nota = Ver nota actual y seguir agregando lineas "
+echo ""
+echo "--------------------------------------"
+echo ""
+echo ""
+else
+echo -e "$(rclone cat  $CLOUDDIRNOTAS/"$(echo -e "$ALLNOTAS" | sed -n "$NUM"p)")\n"$TEXT"" | rclone rcat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+fi
+done
+exit
+fi
+if [ "$1" = "addl" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep "$2" | grep "$3" | grep "$4" | grep -v "~" | grep -v "#" )
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n 1p)""
+echo ""
+clear
+echo "Añadir a la Nota: $(echo "$ALLNOTAS" | sed -n 1p |  sed 's/.*\///')"
+echo ""
+echo "--------------------------------------"
+echo "Introduce la línea que quieres agregar"
+echo "--------------------------------------"
+echo ""
+echo " Pulsa Ctrl + c para salir"
+while :
+do
+echo ""
+read -e -r TEXT
+echo -e "$(rclone cat  $CLOUDDIRNOTAS/"$(echo -e "$ALLNOTAS" | sed -n 1p)")\n"$TEXT"" | rclone rcat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n 1p)"
+done
+exit
+fi
+if [ "$1" = "catl" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep "$2" | grep "$3" | grep "$4" | grep -v "~" | grep -v "#" )
+rclone cat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n 1p)"
+exit
+fi
+if [ "$1" = "addyt" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#" )
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" |  sed 's/.*\///'  | sed s'|.md||'g | sed s'|.org||'g |  nl -s '. ' | grep -i "$2" | grep -i "$3"
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+echo ""
+clear
+echo "#  $(echo "$ALLNOTAS" | sed -n "$NUM"p |  sed 's/.*\///')"
+rclone cat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+echo ""
+echo -ne "Introduce la url: " ; read -e TEXT
+IMAGE=$(echo $TEXT | cut -d "=" -f2 | cut -d "&" -f1)
+echo "Video $(wget --quiet -O - $TEXT   | sed -n -e 's!.*<title>\(.*\)</title>.*!\1!p') agregado a "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+echo -e "$(rclone cat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)")\n## $(wget --quiet -O - $TEXT   | sed -n -e 's!.*<title>\(.*\)</title>.*!\1!p')\n$(echo echo '[![](http://img.youtube.com/vi/'$IMAGE'/0.jpg)]('$TEXT' "")')\n" | sed s/'\w*^*'// | awk '{$1=$1};1' | rclone rcat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+clear
+echo "#  $(echo "$ALLNOTAS" | sed -n "$NUM"p |  sed 's/.*\///')"
+rclone cat  $CLOUDDIRNOTAS/"$(echo "$ALLNOTAS" | sed -n "$NUM"p)"
+echo ""
+exit
+fi
+if [ "$1" = "m" ]
+then
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#")
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo "$ALLNOTAS" | sed 's/.*\///' | nl -s '. ' | grep -i "$2" | grep -i "$3" | sed s'|.md||'g | sed s'|.org||'g
+echo ""
+echo -en "Introduce el nº de Nota que deseas editar: " ; read -e NUM
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    sleep $TIME
+    #                                      $DIRECTORIO/
+    $EDITORMD  ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+    fusermount -uz ~/.config/rcnotes/mount/
+exit
+fi
+    echo ""
+ALLNOTAS=$(rclone lsl  $CLOUDDIRNOTAS --exclude "*~" |  awk '{print $2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}'  | sort -k1 -r | awk '{print $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20}' | sed 's/[ \t]*$//' | egrep ".txt|.org|.md" | grep -v "~" | grep -v "#")
+echo "Total Notas= $(echo "$ALLNOTAS" | wc -l)"
+echo ""
+echo ""
+NUM=$(echo "$ALLNOTAS" | grep -in "$1" | grep -i "$2" | sed s'|.md||'g | sed s'|.org||'g | cut -d":" -f1 | cut -d"/" -f1 | head -n 1)
+if [ "$NUM" = "" ]; then
+    echo "No existe ninguna nota con ese nombre !!!"
+    echo "-----------------------------------------"
+    echo ""
+    exit
+fi
+echo ""
+echo "Abriendo la nota "$(echo "$ALLNOTAS" | sed -n "$NUM"p)""
+    rclone mount $CLOUDDIRNOTAS ~/.config/rcnotes/mount  > /dev/null 2>&1 &
+    sleep $TIME
+    #                                      $DIRECTORIO/
+    $EDITORMD  ~/.config/rcnotes/mount/"$(echo "$ALLNOTAS" | sed -n "$NUM"p | sed 's/[ \t]*$//' )"
+    fusermount -uz ~/.config/rcnotes/mount/
